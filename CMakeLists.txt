@@ -30,6 +30,9 @@ set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -g" CACHE STRING "" FORCE)
 # resource structs). Build -m32 when the host has multilib; otherwise fall back
 # to -m64 so compile work can proceed.
 set(SMS_ARCH "auto" CACHE STRING "auto, 32 or 64")
+if(EMSCRIPTEN)
+  set(SMS_ARCH 32)
+endif()
 if(SMS_ARCH STREQUAL "auto")
   include(CheckCXXSourceCompiles)
   set(CMAKE_REQUIRED_FLAGS "-m32")
@@ -44,8 +47,10 @@ if(SMS_ARCH STREQUAL "auto")
     message(WARNING "-m32 does not link here (install gcc-multilib g++-multilib); building -m64")
   endif()
 endif()
-add_compile_options(-m${SMS_ARCH})
-add_link_options(-m${SMS_ARCH})
+if(NOT EMSCRIPTEN)
+  add_compile_options(-m${SMS_ARCH})
+  add_link_options(-m${SMS_ARCH})
+endif()
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   # RUNPATH, not RPATH: a toolchain's library directory (the launcher's conda
   # tools add one to every link) then finds only the game's own libraries.
