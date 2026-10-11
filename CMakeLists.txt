@@ -22,8 +22,14 @@ endforeach()
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "" FORCE)
 endif()
-set(CMAKE_C_FLAGS_RELWITHDEBINFO "-O2 -g" CACHE STRING "" FORCE)
-set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -g" CACHE STRING "" FORCE)
+if(EMSCRIPTEN)
+  # DWARF makes wasm builds huge and slow to link; add -g by hand to debug.
+  set(CMAKE_C_FLAGS_RELWITHDEBINFO "-O2" CACHE STRING "" FORCE)
+  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2" CACHE STRING "" FORCE)
+else()
+  set(CMAKE_C_FLAGS_RELWITHDEBINFO "-O2 -g" CACHE STRING "" FORCE)
+  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -g" CACHE STRING "" FORCE)
+endif()
 
 # --- Target word size -------------------------------------------------------
 # The game assumes 32-bit pointers (pointer-in-u32 slots, in-place relocated
@@ -50,6 +56,10 @@ endif()
 if(NOT EMSCRIPTEN)
   add_compile_options(-m${SMS_ARCH})
   add_link_options(-m${SMS_ARCH})
+else()
+  # Atomics must be enabled at compile time as well as at link time.
+  add_compile_options(-pthread)
+  add_link_options(-pthread)
 endif()
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   # RUNPATH, not RPATH: a toolchain's library directory (the launcher's conda
@@ -267,7 +277,10 @@ target_compile_options(sms_game PRIVATE ${SMS_GAME_FLAGS})
 # which would also capture libstdc++ and the platform layer (and crash before
 # the first JKRHeap exists). Rename the game's definitions and every game
 # reference to them, so only game code allocates from JKR heaps.
-if(WIN32 AND SMS_ARCH STREQUAL "64")
+if(EMSCRIPTEN)
+  # wasm32's size_t is unsigned long, mangled as m.
+  set(_sz m)
+elseif(WIN32 AND SMS_ARCH STREQUAL "64")
   # MinGW x64 is LLP64: size_t is unsigned long long, mangled as y.
   set(_sz y)
 elseif(SMS_ARCH STREQUAL "32")
@@ -299,6 +312,12 @@ elseif(WIN32)
     set(_object_prefix "")
   endif()
   set(SMS_OBJCOPY objcopy)
+elseif(EMSCRIPTEN)
+  set(_object_prefix "")
+  find_program(SMS_OBJCOPY NAMES llvm-objcopy PATHS "$ENV{EMSDK}/upstream/bin" NO_DEFAULT_PATH)
+  if(NOT SMS_OBJCOPY)
+    message(FATAL_ERROR "llvm-objcopy not found under $ENV{EMSDK}/upstream/bin")
+  endif()
 else()
   set(_object_prefix "")
   set(SMS_OBJCOPY objcopy)
@@ -371,8 +390,8 @@ if(WIN32)
     # data. Keep the image below 4 GiB, as on the Linux non-PIE build.
     target_link_options(sms PRIVATE -Wl,--image-base,0x400000 -Wl,--disable-dynamicbase -Wl,--disable-high-entropy-va)
   endif()
-elseif(APPLE)
-  # Apple ld has no --defsym; provide a normal symbol (DSP HLE does not need the GC address).
+elseif(APPLE OR EMSCRIPTEN)
+  # Apple ld and wasm-ld have no usable --defsym; provide a normal symbol (DSP HLE does not need the GC address).
   target_sources(sms PRIVATE ${SMS_PORT_SRC}/lbl_80004600_darwin.c)
 else()
   target_link_options(sms PRIVATE -Wl,--defsym=lbl_80004600=0x80004600)
@@ -388,6 +407,13 @@ if(APPLE)
   target_link_options(sms PRIVATE "LINKER:-pagezero_size,0x1000")
 endif()
 find_package(Threads REQUIRED)
+if(EMSCRIPTEN)
+  target_link_options(sms PRIVATE
+    -pthread -sPROXY_TO_PTHREAD=1 -sPTHREAD_POOL_SIZE=24
+    -sINITIAL_MEMORY=268435456 -sALLOW_MEMORY_GROWTH=1 -sMAXIMUM_MEMORY=1073741824
+    -sSTACK_SIZE=2097152 -sDEFAULT_PTHREAD_STACK_SIZE=1048576
+    -sASSERTIONS=1 -sENVIRONMENT=web,worker,node -sFORCE_FILESYSTEM=1)
+endif()
 if(WIN32 AND SMS_ARCH STREQUAL "64")
   add_executable(sms_windows_stack_test EXCLUDE_FROM_ALL
     platform/os/tests/windows_stack_test.cpp platform/os/windows_stack.cpp)
