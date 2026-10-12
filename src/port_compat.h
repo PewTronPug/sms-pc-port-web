@@ -21,6 +21,18 @@
 #include <limits.h>
 #include <float.h>
 #include <wchar.h>
+
+/* Emscripten/Web port: address mapping stub */
+#ifdef __EMSCRIPTEN__
+static inline void* port_mem1_address(uint32_t addr) {
+  return (void*)(uintptr_t)addr;
+}
+/* GXPC cache coherence stub - no-op for single-threaded Emscripten */
+static inline void GXPC_AddBigEndianRange(const void* addr, size_t size) {
+  (void)addr;
+  (void)size;
+}
+#endif
 #ifdef __cplusplus
 #include <new>
 #include <cmath>
