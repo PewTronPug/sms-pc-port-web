@@ -42,8 +42,13 @@
             if (!data) return;
             msg.textContent = 'Starting...';
             canvas.style.display = 'block';
-            window.Module = { canvas: canvas };
+            window.Module = {
+                canvas: canvas,
+                print: console.log,
+                printErr: console.error
+            };
             const s = document.createElement('script');
+            s.async = true;
             s.src = 'sms.js';
             document.body.appendChild(s);
         };
