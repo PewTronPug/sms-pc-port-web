@@ -3,391 +3,170 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Super Mario Sunshine - Web Port</title>
+    <title>Mario Sunshine Web</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: 'Arial', sans-serif;
-            background: linear-gradient(180deg, #87CEEB 0%, #E0F6FF 50%, #FFE6CC 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            overflow: hidden;
-            position: relative;
-        }
-
-        /* Beach background effects */
-        .beach-waves {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 200px;
-            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120"><defs><pattern id="wave" x="0" y="0" width="120" height="120" patternUnits="userSpaceOnUse"><path d="M0,60 Q30,30 60,60 T120,60" stroke="%2387CEEB" stroke-width="2" fill="none"/></pattern></defs><rect width="1200" height="120" fill="%2387CEEB"/><rect width="1200" height="120" fill="url(%23wave)"/></svg>') repeat-x;
-            animation: wave 10s linear infinite;
-            opacity: 0.8;
-            z-index: 1;
-        }
-
-        @keyframes wave {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(120px); }
-        }
-
-        .sand {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 120px;
-            background: linear-gradient(180deg, #FFD700 0%, #FFA500 100%);
-            z-index: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: Arial, sans-serif;
         }
 
         .container {
-            position: relative;
-            z-index: 10;
-            max-width: 1200px;
-            margin: 0 auto;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        .header {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             text-align: center;
-            margin-bottom: 30px;
-            animation: fadeInDown 0.8s ease-out;
+            max-width: 500px;
+            width: 100%;
         }
 
-        @keyframes fadeInDown {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .title {
-            font-size: 3.5em;
+        h1 {
             color: #ff6b35;
-            text-shadow: 3px 3px 0px rgba(0,0,0,0.2), 6px 6px 0px rgba(0,0,0,0.1);
-            font-weight: bold;
-            margin-bottom: 10px;
+            margin-bottom: 20px;
+            font-size: 2.5em;
         }
 
         .subtitle {
-            font-size: 1.2em;
-            color: #0066cc;
-            font-style: italic;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.1em;
         }
 
-        .game-wrapper {
-            display: flex;
-            gap: 30px;
-            align-items: flex-start;
-            animation: fadeInUp 0.8s ease-out;
-        }
-
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .canvas-container {
-            position: relative;
-            width: 640px;
-            height: 480px;
-            background: #000;
-            border: 8px solid #ff6b35;
+        .drop-zone {
+            border: 3px dashed #667eea;
             border-radius: 12px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            overflow: hidden;
-        }
-
-        canvas {
-            width: 100%;
-            height: 100%;
-            display: block;
-        }
-
-        .controls-panel {
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-            min-width: 300px;
-            animation: fadeInRight 0.8s ease-out;
-        }
-
-        @keyframes fadeInRight {
-            from {
-                opacity: 0;
-                transform: translateX(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-
-        .panel-title {
-            font-size: 1.5em;
-            color: #ff6b35;
+            padding: 60px 20px;
             margin-bottom: 20px;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .panel-title::before {
-            content: "🕹️";
-            font-size: 1.2em;
-        }
-
-        .iso-upload {
-            border: 3px dashed #0066cc;
-            border-radius: 8px;
-            padding: 30px;
-            text-align: center;
             cursor: pointer;
-            transition: all 0.3s ease;
-            background: #f0f8ff;
-            margin-bottom: 20px;
+            transition: all 0.3s;
+            background: #f8f9ff;
         }
 
-        .iso-upload:hover {
+        .drop-zone:hover {
             border-color: #ff6b35;
-            background: #ffe6f0;
+            background: #fff8f0;
         }
 
-        .iso-upload.dragover {
+        .drop-zone.active {
             border-color: #ff6b35;
             background: #ffe6f0;
             transform: scale(1.02);
         }
 
-        .iso-upload-icon {
-            font-size: 2.5em;
-            margin-bottom: 10px;
+        .drop-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
         }
 
-        .iso-upload-text {
-            color: #333;
+        .drop-text {
             font-weight: bold;
+            color: #333;
             margin-bottom: 5px;
+            font-size: 1.1em;
         }
 
-        .iso-upload-hint {
-            color: #666;
-            font-size: 0.9em;
+        .drop-hint {
+            color: #999;
+            font-size: 0.95em;
         }
 
-        .upload-input {
+        input[type="file"] {
             display: none;
         }
 
-        .button-group {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .btn {
-            padding: 12px 20px;
-            font-size: 1em;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
+        #status {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
             font-weight: bold;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            display: none;
         }
 
-        .btn-primary {
-            background: linear-gradient(135deg, #ff6b35, #ff8c42);
+        #status.show {
+            display: block;
+        }
+
+        #status.loading {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        #status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        #status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
             color: white;
-            box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
         }
 
-        .btn-primary:hover:not(:disabled) {
+        button:hover:not(:disabled) {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(255, 107, 53, 0.4);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
         }
 
-        .btn-primary:disabled {
+        button:disabled {
             opacity: 0.5;
             cursor: not-allowed;
         }
 
-        .btn-secondary {
-            background: #0066cc;
-            color: white;
+        #gameContainer {
+            margin-top: 20px;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            display: none;
         }
 
-        .btn-secondary:hover {
-            background: #0052a3;
-            transform: translateY(-2px);
-        }
-
-        .status {
-            background: #f0f8ff;
-            padding: 15px;
-            border-radius: 6px;
-            border-left: 4px solid #0066cc;
-            color: #333;
-            font-size: 0.9em;
-            line-height: 1.6;
-        }
-
-        .status.loading {
-            background: #fffacd;
-            border-left-color: #ff9800;
-        }
-
-        .status.success {
-            background: #e8f5e9;
-            border-left-color: #4caf50;
-        }
-
-        .status.error {
-            background: #ffebee;
-            border-left-color: #f44336;
-        }
-
-        .sun {
-            position: absolute;
-            top: 50px;
-            right: 80px;
-            width: 80px;
-            height: 80px;
-            background: #FFD700;
-            border-radius: 50%;
-            box-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
-            animation: float 3s ease-in-out infinite;
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-        }
-
-        .cloud {
-            position: absolute;
-            background: white;
-            border-radius: 50px;
-            opacity: 0.8;
-        }
-
-        .cloud1 {
-            width: 100px;
-            height: 40px;
-            top: 80px;
-            left: 50px;
-            animation: drift 15s linear infinite;
-        }
-
-        .cloud2 {
-            width: 80px;
-            height: 30px;
-            top: 150px;
-            right: 100px;
-            animation: drift 20s linear infinite reverse;
-        }
-
-        @keyframes drift {
-            0% { transform: translateX(-100vw); }
-            100% { transform: translateX(100vw); }
-        }
-
-        @media (max-width: 1024px) {
-            .game-wrapper {
-                flex-direction: column;
-                align-items: center;
-            }
-
-            .canvas-container {
-                width: 100%;
-                max-width: 500px;
-            }
-
-            .title {
-                font-size: 2.5em;
-            }
-        }
-
-        .info-text {
-            font-size: 0.85em;
-            color: #666;
-            margin-top: 10px;
-            text-align: center;
+        canvas {
+            width: 100%;
+            height: auto;
+            display: block;
         }
     </style>
 </head>
 <body>
-    <div class="sand"></div>
-    <div class="beach-waves"></div>
-
-    <div class="sun"></div>
-    <div class="cloud cloud1"></div>
-    <div class="cloud cloud2"></div>
-
     <div class="container">
-        <div class="header">
-            <div class="title">🍄 Super Mario Sunshine</div>
-            <div class="subtitle">Web Port - Play in Your Browser</div>
+        <h1>🍄 Mario Sunshine</h1>
+        <p class="subtitle">Drop your ISO and play</p>
+
+        <div class="drop-zone" id="dropZone">
+            <div class="drop-icon">📦</div>
+            <div class="drop-text">Drop ISO here</div>
+            <div class="drop-hint">or click to browse</div>
         </div>
 
-        <div class="game-wrapper">
-            <div class="canvas-container">
-                <canvas id="gameCanvas"></canvas>
-            </div>
+        <input type="file" id="isoInput" accept=".iso,.gcm,.ciso">
 
-            <div class="controls-panel">
-                <div class="panel-title">Load Game</div>
+        <div id="status"></div>
 
-                <div class="iso-upload" id="dropZone">
-                    <div class="iso-upload-icon">📦</div>
-                    <div class="iso-upload-text">Drop ISO Here</div>
-                    <div class="iso-upload-hint">or click to browse</div>
-                </div>
+        <button id="launchBtn" disabled>▶ Play</button>
 
-                <input type="file" id="isoInput" class="upload-input" accept=".iso,.gcm,.ciso">
-
-                <div class="status" id="status">
-                    Ready to load ISO file (GMSE01)
-                </div>
-
-                <div class="button-group">
-                    <button class="btn btn-primary" id="launchBtn" disabled>
-                        ▶ Launch Game
-                    </button>
-                    <button class="btn btn-secondary" id="resetBtn" style="display:none;">
-                        🔄 Reset
-                    </button>
-                </div>
-
-                <div class="info-text">
-                    💾 Drag & drop your Super Mario Sunshine ISO file here to start playing!
-                </div>
-            </div>
+        <div id="gameContainer">
+            <canvas id="gameCanvas"></canvas>
         </div>
     </div>
 
@@ -395,109 +174,95 @@
         const dropZone = document.getElementById('dropZone');
         const isoInput = document.getElementById('isoInput');
         const launchBtn = document.getElementById('launchBtn');
-        const resetBtn = document.getElementById('resetBtn');
-        const statusEl = document.getElementById('status');
+        const status = document.getElementById('status');
+        const gameContainer = document.getElementById('gameContainer');
         const canvas = document.getElementById('gameCanvas');
 
         let isoData = null;
 
-        // Drop zone handling
+        function updateStatus(msg, type) {
+            status.textContent = msg;
+            status.className = 'show ' + type;
+        }
+
+        // Click to open file picker
         dropZone.addEventListener('click', () => isoInput.click());
 
+        // Drag and drop
         dropZone.addEventListener('dragover', (e) => {
             e.preventDefault();
-            dropZone.classList.add('dragover');
+            dropZone.classList.add('active');
         });
 
         dropZone.addEventListener('dragleave', () => {
-            dropZone.classList.remove('dragover');
+            dropZone.classList.remove('active');
         });
 
         dropZone.addEventListener('drop', (e) => {
             e.preventDefault();
-            dropZone.classList.remove('dragover');
-
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                handleISOFile(files[0]);
+            dropZone.classList.remove('active');
+            if (e.dataTransfer.files.length > 0) {
+                handleFile(e.dataTransfer.files[0]);
             }
         });
 
+        // File input change
         isoInput.addEventListener('change', (e) => {
             if (e.target.files.length > 0) {
-                handleISOFile(e.target.files[0]);
+                handleFile(e.target.files[0]);
             }
         });
 
-        function handleISOFile(file) {
-            statusEl.textContent = `📥 Loading: ${file.name} (${(file.size / 1024 / 1024).toFixed(1)}MB)`;
-            statusEl.classList.add('loading');
+        function handleFile(file) {
+            const sizeMB = (file.size / 1024 / 1024).toFixed(1);
+            updateStatus(`📥 Loading ${file.name} (${sizeMB}MB)...`, 'loading');
 
             const reader = new FileReader();
             reader.onload = (e) => {
                 isoData = e.target.result;
-                statusEl.textContent = `✓ ISO loaded! Ready to play.`;
-                statusEl.classList.remove('loading');
-                statusEl.classList.add('success');
+                updateStatus(`✓ Ready to play!`, 'success');
                 launchBtn.disabled = false;
             };
-
             reader.onerror = () => {
-                statusEl.textContent = `✗ Error loading file. Try again.`;
-                statusEl.classList.add('error');
+                updateStatus(`✗ Error loading file`, 'error');
             };
-
             reader.readAsArrayBuffer(file);
         }
 
         launchBtn.addEventListener('click', () => {
             if (isoData) {
-                statusEl.textContent = `🎮 Initializing emulator...`;
-                launchBtn.style.display = 'none';
-                resetBtn.style.display = 'block';
+                updateStatus(`🎮 Starting game...`, 'loading');
+                launchBtn.disabled = true;
+                gameContainer.style.display = 'block';
 
-                // Initialize game with ISO data
-                initializeGame(isoData);
+                // Load and run the game
+                initGame(isoData);
             }
         });
 
-        resetBtn.addEventListener('click', () => {
-            location.reload();
-        });
-
-        function initializeGame(isoBuffer) {
-            // Emscripten Module setup
-            var Module = {
+        function initGame(isoBuffer) {
+            window.Module = {
                 canvas: canvas,
-                preRun: [],
-                postRun: [],
                 print: (text) => console.log(text),
                 printErr: (text) => console.error(text),
             };
 
-            // Load WASM module
             fetch('sms.wasm')
                 .then(r => r.arrayBuffer())
                 .then(wasmBuffer => {
-                    Module.wasmBinary = wasmBuffer;
-
-                    // Create script and load Emscripten runtime
+                    window.Module.wasmBinary = wasmBuffer;
                     const script = document.createElement('script');
                     script.src = 'sms.js';
                     script.onload = () => {
-                        statusEl.textContent = `🎮 Game running!`;
-                        statusEl.classList.remove('loading');
-                        statusEl.classList.add('success');
+                        updateStatus(`🎮 Game running!`, 'success');
                     };
                     script.onerror = () => {
-                        statusEl.textContent = `✗ Failed to load game runtime.`;
-                        statusEl.classList.add('error');
+                        updateStatus(`✗ Failed to load game`, 'error');
                     };
                     document.body.appendChild(script);
                 })
                 .catch(err => {
-                    statusEl.textContent = `✗ Error: ${err.message}`;
-                    statusEl.classList.add('error');
+                    updateStatus(`✗ ${err.message}`, 'error');
                 });
         }
     </script>
