@@ -58,8 +58,8 @@ if(NOT EMSCRIPTEN)
   add_link_options(-m${SMS_ARCH})
 else()
   # Atomics must be enabled at compile time as well as at link time.
-  add_compile_options(-pthread)
-  add_link_options(-pthread)
+  # add_compile_options(-pthread)
+  # add_link_options(-pthread)
 endif()
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   # RUNPATH, not RPATH: a toolchain's library directory (the launcher's conda
@@ -409,9 +409,8 @@ endif()
 find_package(Threads REQUIRED)
 if(EMSCRIPTEN)
   target_link_options(sms PRIVATE
-    -pthread -sPROXY_TO_PTHREAD=1 -sPTHREAD_POOL_SIZE=24
     -sINITIAL_MEMORY=268435456 -sALLOW_MEMORY_GROWTH=1 -sMAXIMUM_MEMORY=1073741824
-    -sSTACK_SIZE=2097152 -sDEFAULT_PTHREAD_STACK_SIZE=1048576
+    -sSTACK_SIZE=2097152
     -sASSERTIONS=1 -sENVIRONMENT=web,worker,node -sFORCE_FILESYSTEM=1)
 endif()
 if(WIN32 AND SMS_ARCH STREQUAL "64")
