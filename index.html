@@ -1,175 +1,55 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mario Sunshine Web</title>
+    <title>Mario Sunshine</title>
     <style>
-        body {
-            margin: 0;
-            padding: 20px;
-            background: #667eea;
-            font-family: Arial, sans-serif;
-            min-height: 100vh;
-        }
-
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            background: white;
-            padding: 40px;
-            border-radius: 12px;
-        }
-
-        h1 {
-            color: #ff6b35;
-            margin-bottom: 30px;
-        }
-
-        input[type="file"] {
-            font-size: 16px;
-            padding: 10px;
-            margin-bottom: 20px;
-            display: block;
-            width: 100%;
-        }
-
-        button {
-            background: #667eea;
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            font-size: 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            width: 100%;
-            font-weight: bold;
-        }
-
-        button:hover:not(:disabled) {
-            background: #764ba2;
-        }
-
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        #status {
-            margin: 20px 0;
-            padding: 15px;
-            border-radius: 8px;
-            display: none;
-        }
-
-        #status.show {
-            display: block;
-        }
-
-        #status.success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        #status.error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-        #status.loading {
-            background: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeaa7;
-        }
-
-        canvas {
-            width: 100%;
-            background: black;
-            margin-top: 20px;
-            display: none;
-        }
+        body { font-family: Arial; text-align: center; padding: 40px; background: #333; color: white; }
+        button { padding: 15px 30px; font-size: 18px; margin: 10px; cursor: pointer; background: #0066cc; color: white; border: none; border-radius: 5px; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        canvas { margin-top: 20px; background: black; display: none; }
+        #msg { margin: 20px 0; font-size: 16px; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🍄 Mario Sunshine</h1>
-
-        <input type="file" id="isoFile" accept=".iso,.gcm,.ciso">
-
-        <button id="launchBtn" disabled>▶ Play</button>
-
-        <div id="status"></div>
-
-        <canvas id="gameCanvas" width="640" height="480"></canvas>
-    </div>
+    <h1>Mario Sunshine</h1>
+    <input type="file" id="iso" accept=".iso,.gcm,.ciso">
+    <button id="play" disabled>Play</button>
+    <div id="msg"></div>
+    <canvas id="canvas" width="640" height="480"></canvas>
 
     <script>
-        const isoFile = document.getElementById('isoFile');
-        const launchBtn = document.getElementById('launchBtn');
-        const status = document.getElementById('status');
-        const canvas = document.getElementById('gameCanvas');
+        let data = null;
+        const iso = document.getElementById('iso');
+        const play = document.getElementById('play');
+        const msg = document.getElementById('msg');
+        const canvas = document.getElementById('canvas');
 
-        let isoData = null;
+        iso.onchange = (e) => {
+            const f = e.target.files[0];
+            if (!f) return;
+            msg.textContent = 'Loading...';
+            const r = new FileReader();
+            r.onload = () => {
+                data = r.result;
+                msg.textContent = 'Ready';
+                play.disabled = false;
+            };
+            r.onerror = () => msg.textContent = 'Error';
+            r.readAsArrayBuffer(f);
+        };
 
-        isoFile.addEventListener('change', (e) => {
-            if (e.target.files.length > 0) {
-                const file = e.target.files[0];
-                const sizeMB = (file.size / 1024 / 1024).toFixed(1);
-                showStatus(`Loading ${file.name} (${sizeMB}MB)...`, 'loading');
-
-                const reader = new FileReader();
-                reader.onload = (evt) => {
-                    isoData = evt.target.result;
-                    showStatus('✓ Ready to play!', 'success');
-                    launchBtn.disabled = false;
-                };
-                reader.onerror = () => {
-                    showStatus('✗ Error loading file', 'error');
-                };
-                reader.readAsArrayBuffer(file);
-            }
-        });
-
-        launchBtn.addEventListener('click', () => {
-            if (isoData) {
-                showStatus('Starting game...', 'loading');
-                launchBtn.disabled = true;
-                canvas.style.display = 'block';
-
-                // Initialize Emscripten module
-                window.Module = {
-                    canvas: canvas,
-                    print: (text) => console.log(text),
-                    printErr: (text) => console.error(text),
-                };
-
-                // Load WASM
-                fetch('sms.wasm')
-                    .then(r => r.arrayBuffer())
-                    .then(wasmBuffer => {
-                        window.Module.wasmBinary = wasmBuffer;
-                        const script = document.createElement('script');
-                        script.src = 'sms.js';
-                        script.onload = () => {
-                            showStatus('Game running!', 'success');
-                        };
-                        script.onerror = () => {
-                            showStatus('Failed to load game', 'error');
-                        };
-                        document.body.appendChild(script);
-                    })
-                    .catch(err => {
-                        showStatus('Error: ' + err.message, 'error');
-                    });
-            }
-        });
-
-        function showStatus(msg, type) {
-            status.textContent = msg;
-            status.className = 'show ' + type;
-        }
+        play.onclick = () => {
+            if (!data) return;
+            msg.textContent = 'Starting...';
+            canvas.style.display = 'block';
+            window.Module = { canvas: canvas };
+            fetch('sms.wasm').then(r => r.arrayBuffer()).then(w => {
+                window.Module.wasmBinary = w;
+                const s = document.createElement('script');
+                s.src = 'sms.js';
+                document.body.appendChild(s);
+            }).catch(e => msg.textContent = 'Error: ' + e);
+        };
     </script>
 </body>
 </html>
