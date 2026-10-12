@@ -1,0 +1,16 @@
+Reason: web: Emscripten does not support these incomplete array aliases; code mods are not available in the web build
+--- a/src/MoveBG/MapObjInit.cpp
++++ b/src/MoveBG/MapObjInit.cpp
+@@ -10815,1 +10815,1 @@
+-#ifdef TARGET_PC
++#if defined(TARGET_PC) && !defined(__EMSCRIPTEN__)
+--- a/src/Player/MarioDraw.cpp
++++ b/src/Player/MarioDraw.cpp
+@@ -37,1 +37,1 @@
+-#ifdef TARGET_PC
++#if defined(TARGET_PC) && !defined(__EMSCRIPTEN__)
+--- a/src/Player/Yoshi.cpp
++++ b/src/Player/Yoshi.cpp
+@@ -60,1 +60,1 @@
+-#ifdef TARGET_PC
++#if defined(TARGET_PC) && !defined(__EMSCRIPTEN__)

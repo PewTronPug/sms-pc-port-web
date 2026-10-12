@@ -1,0 +1,10 @@
+--- a/system/lib/pthread/proxying_legacy.c
++++ b/system/lib/pthread/proxying_legacy.c
+@@ -351,7 +351,9 @@ static pthread_t normalize_thread(pthread_t target_thread) {
+-  assert(target_thread);
++  if (!target_thread) {
++    target_thread = EM_CALLBACK_THREAD_CONTEXT_MAIN_RUNTIME_THREAD;
++  }
+   if (target_thread == EM_CALLBACK_THREAD_CONTEXT_MAIN_RUNTIME_THREAD) {
+     return emscripten_main_runtime_thread_id();
+   }
