@@ -43,12 +43,9 @@
             msg.textContent = 'Starting...';
             canvas.style.display = 'block';
             window.Module = { canvas: canvas };
-            fetch('sms.wasm').then(r => r.arrayBuffer()).then(w => {
-                window.Module.wasmBinary = w;
-                const s = document.createElement('script');
-                s.src = 'sms.js';
-                document.body.appendChild(s);
-            }).catch(e => msg.textContent = 'Error: ' + e);
+            const s = document.createElement('script');
+            s.src = 'sms.js';
+            document.body.appendChild(s);
         };
     </script>
 </body>
