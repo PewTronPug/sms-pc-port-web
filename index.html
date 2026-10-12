@@ -5,97 +5,65 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mario Sunshine Web</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            margin: 0;
+            padding: 20px;
+            background: #667eea;
             font-family: Arial, sans-serif;
+            min-height: 100vh;
         }
 
         .container {
+            max-width: 600px;
+            margin: 0 auto;
             background: white;
-            border-radius: 16px;
             padding: 40px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            text-align: center;
-            max-width: 500px;
-            width: 100%;
+            border-radius: 12px;
         }
 
         h1 {
             color: #ff6b35;
-            margin-bottom: 20px;
-            font-size: 2.5em;
-        }
-
-        .subtitle {
-            color: #666;
-            margin-bottom: 40px;
-            font-size: 1.1em;
-        }
-
-        .drop-zone {
-            border: 3px dashed #667eea;
-            border-radius: 12px;
-            padding: 60px 20px;
-            margin-bottom: 20px;
-            cursor: pointer;
-            transition: all 0.3s;
-            background: #f8f9ff;
-        }
-
-        .drop-zone:hover {
-            border-color: #ff6b35;
-            background: #fff8f0;
-        }
-
-        .drop-zone.active {
-            border-color: #ff6b35;
-            background: #ffe6f0;
-            transform: scale(1.02);
-        }
-
-        .drop-icon {
-            font-size: 3em;
-            margin-bottom: 15px;
-        }
-
-        .drop-text {
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 5px;
-            font-size: 1.1em;
-        }
-
-        .drop-hint {
-            color: #999;
-            font-size: 0.95em;
+            margin-bottom: 30px;
         }
 
         input[type="file"] {
-            display: none;
+            font-size: 16px;
+            padding: 10px;
+            margin-bottom: 20px;
+            display: block;
+            width: 100%;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: bold;
+        }
+
+        button:hover:not(:disabled) {
+            background: #764ba2;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
 
         #status {
+            margin: 20px 0;
             padding: 15px;
             border-radius: 8px;
-            margin-bottom: 20px;
-            font-weight: bold;
             display: none;
         }
 
         #status.show {
             display: block;
-        }
-
-        #status.loading {
-            background: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeaa7;
         }
 
         #status.success {
@@ -110,160 +78,97 @@
             border: 1px solid #f5c6cb;
         }
 
-        button {
-            width: 100%;
-            padding: 15px;
-            font-size: 1.1em;
-            border: none;
-            border-radius: 8px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        button:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
-        }
-
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        #gameContainer {
-            margin-top: 20px;
-            background: #000;
-            border-radius: 8px;
-            overflow: hidden;
-            display: none;
+        #status.loading {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
         }
 
         canvas {
             width: 100%;
-            height: auto;
-            display: block;
+            background: black;
+            margin-top: 20px;
+            display: none;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>🍄 Mario Sunshine</h1>
-        <p class="subtitle">Drop your ISO and play</p>
 
-        <div class="drop-zone" id="dropZone">
-            <div class="drop-icon">📦</div>
-            <div class="drop-text">Drop ISO here</div>
-            <div class="drop-hint">or click to browse</div>
-        </div>
-
-        <input type="file" id="isoInput" accept=".iso,.gcm,.ciso">
-
-        <div id="status"></div>
+        <input type="file" id="isoFile" accept=".iso,.gcm,.ciso">
 
         <button id="launchBtn" disabled>▶ Play</button>
 
-        <div id="gameContainer">
-            <canvas id="gameCanvas"></canvas>
-        </div>
+        <div id="status"></div>
+
+        <canvas id="gameCanvas" width="640" height="480"></canvas>
     </div>
 
     <script>
-        const dropZone = document.getElementById('dropZone');
-        const isoInput = document.getElementById('isoInput');
+        const isoFile = document.getElementById('isoFile');
         const launchBtn = document.getElementById('launchBtn');
         const status = document.getElementById('status');
-        const gameContainer = document.getElementById('gameContainer');
         const canvas = document.getElementById('gameCanvas');
 
         let isoData = null;
 
-        function updateStatus(msg, type) {
-            status.textContent = msg;
-            status.className = 'show ' + type;
-        }
-
-        // Click to open file picker
-        dropZone.addEventListener('click', () => isoInput.click());
-
-        // Drag and drop
-        dropZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropZone.classList.add('active');
-        });
-
-        dropZone.addEventListener('dragleave', () => {
-            dropZone.classList.remove('active');
-        });
-
-        dropZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropZone.classList.remove('active');
-            if (e.dataTransfer.files.length > 0) {
-                handleFile(e.dataTransfer.files[0]);
-            }
-        });
-
-        // File input change
-        isoInput.addEventListener('change', (e) => {
+        isoFile.addEventListener('change', (e) => {
             if (e.target.files.length > 0) {
-                handleFile(e.target.files[0]);
+                const file = e.target.files[0];
+                const sizeMB = (file.size / 1024 / 1024).toFixed(1);
+                showStatus(`Loading ${file.name} (${sizeMB}MB)...`, 'loading');
+
+                const reader = new FileReader();
+                reader.onload = (evt) => {
+                    isoData = evt.target.result;
+                    showStatus('✓ Ready to play!', 'success');
+                    launchBtn.disabled = false;
+                };
+                reader.onerror = () => {
+                    showStatus('✗ Error loading file', 'error');
+                };
+                reader.readAsArrayBuffer(file);
             }
         });
-
-        function handleFile(file) {
-            const sizeMB = (file.size / 1024 / 1024).toFixed(1);
-            updateStatus(`📥 Loading ${file.name} (${sizeMB}MB)...`, 'loading');
-
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                isoData = e.target.result;
-                updateStatus(`✓ Ready to play!`, 'success');
-                launchBtn.disabled = false;
-            };
-            reader.onerror = () => {
-                updateStatus(`✗ Error loading file`, 'error');
-            };
-            reader.readAsArrayBuffer(file);
-        }
 
         launchBtn.addEventListener('click', () => {
             if (isoData) {
-                updateStatus(`🎮 Starting game...`, 'loading');
+                showStatus('Starting game...', 'loading');
                 launchBtn.disabled = true;
-                gameContainer.style.display = 'block';
+                canvas.style.display = 'block';
 
-                // Load and run the game
-                initGame(isoData);
+                // Initialize Emscripten module
+                window.Module = {
+                    canvas: canvas,
+                    print: (text) => console.log(text),
+                    printErr: (text) => console.error(text),
+                };
+
+                // Load WASM
+                fetch('sms.wasm')
+                    .then(r => r.arrayBuffer())
+                    .then(wasmBuffer => {
+                        window.Module.wasmBinary = wasmBuffer;
+                        const script = document.createElement('script');
+                        script.src = 'sms.js';
+                        script.onload = () => {
+                            showStatus('Game running!', 'success');
+                        };
+                        script.onerror = () => {
+                            showStatus('Failed to load game', 'error');
+                        };
+                        document.body.appendChild(script);
+                    })
+                    .catch(err => {
+                        showStatus('Error: ' + err.message, 'error');
+                    });
             }
         });
 
-        function initGame(isoBuffer) {
-            window.Module = {
-                canvas: canvas,
-                print: (text) => console.log(text),
-                printErr: (text) => console.error(text),
-            };
-
-            fetch('sms.wasm')
-                .then(r => r.arrayBuffer())
-                .then(wasmBuffer => {
-                    window.Module.wasmBinary = wasmBuffer;
-                    const script = document.createElement('script');
-                    script.src = 'sms.js';
-                    script.onload = () => {
-                        updateStatus(`🎮 Game running!`, 'success');
-                    };
-                    script.onerror = () => {
-                        updateStatus(`✗ Failed to load game`, 'error');
-                    };
-                    document.body.appendChild(script);
-                })
-                .catch(err => {
-                    updateStatus(`✗ ${err.message}`, 'error');
-                });
+        function showStatus(msg, type) {
+            status.textContent = msg;
+            status.className = 'show ' + type;
         }
     </script>
 </body>
